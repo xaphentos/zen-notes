@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zen - Notes</title>
+  <style>
+    :root {
+      --accent: #467DFF;
+      --bg: #1C1F23;
+      --footer: #18181C;
+      --white: #F5F5DC;
+      --white-soft: #EDEADE;
+      --scrollbar-bg: #2a2d31;
+      --scrollbar-thumb: #467DFF;
+      --scrollbar-thumb-hover: #335fcc;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--bg);
+      color: var(--white);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      background: var(--footer);
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+      flex-shrink: 0;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+    }
+
+    .toolbar button {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      font-size: 1.1rem;
+      padding: 6px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .toolbar button:hover {
+      background: var(--scrollbar-thumb-hover);
+    }
+
+    #filename {
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--white-soft);
+      user-select: all;
+      outline: none;
+      min-width: 80px;
+      cursor: text;
+      flex-shrink: 0;
+    }
+
+    #filename:focus {
+      outline: 2px solid var(--accent);
+      background-color: var(--white-soft);
+      color: var(--bg);
+      border-radius: 4px;
+    }
+
+    #editor {
+      flex: 1;
+      padding: 24px;
+      background: var(--bg);
+      color: var(--white);
+      border: none;
+      width: 100%;
+      resize: none;
+      font-size: 1rem;
+      font-family: monospace;
+      line-height: 1.6;
+      box-sizing: border-box;
+      outline: none;
+      overflow-y: auto;
+    }
+
+    footer {
+      background: var(--footer);
+      color: var(--white-soft);
+      text-align: center;
+      padding: 10px;
+      font-size: 0.9rem;
+      box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.4);
+      flex-shrink: 0;
+      user-select: none;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+      margin-left: 8px;
+      font-weight: 600;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Custom Scrollbar Styles for WebKit browsers */
+    #editor::-webkit-scrollbar {
+      width: 12px;
+    }
+
+    #editor::-webkit-scrollbar-track {
+      background: var(--scrollbar-bg);
+      border-radius: 6px;
+    }
+
+    #editor::-webkit-scrollbar-thumb {
+      background-color: var(--scrollbar-thumb);
+      border-radius: 6px;
+      border: 3px solid var(--scrollbar-bg);
+      transition: background-color 0.3s;
+    }
+
+    #editor::-webkit-scrollbar-thumb:hover {
+      background-color: var(--scrollbar-thumb-hover);
+    }
+
+    /* Firefox scrollbar styling */
+    #editor {
+      scrollbar-width: thin;
+      scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
+    }
+
+    /* Hide default file input */
+    #fileInput {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="toolbar">
+      <button onclick="newNote()" title="New Note">New Note</button>
+      <button onclick="saveNote()" title="Save">Save</button>
+      <button onclick="downloadNote()" title="Download as file">Download</button>
+      <button onclick="openFileDialog()" title="Open File">Open File</button>
+      <input type="file" id="fileInput" accept=".txt,.md,.js,.json,.html,.css" />
+    </div>
+    <div
+      id="filename"
+      contenteditable="true"
+      spellcheck="false"
+      title="Click to edit filename"
+      aria-label="Filename"
+    >note.txt</div>
+  </header>
+
+  <textarea id="editor" placeholder="Start typing..."></textarea>
+
+  <footer>
+    Zen - notes – Your personal markdown/code note app
+    <a href="https://github.com/xaphentos" target="_blank" rel="noopener noreferrer">GitHub</a>
+  </footer>
+
+  <script>
+    const editor = document.getElementById("editor");
+    const filenameEl = document.getElementById("filename");
+    const fileInput = document.getElementById("fileInput");
+
+    function sanitizeFilename(name) {
+      return name.replace(/[/\\?%*:|"<>]/g, '').trim() || 'note.txt';
+    }
+
+    window.onload = () => {
+      editor.value = localStorage.getItem("note") || "";
+      filenameEl.textContent = localStorage.getItem("filename") || "note.txt";
+    };
+
+    function saveNote() {
+      localStorage.setItem("note", editor.value);
+      localStorage.setItem("filename", sanitizeFilename(filenameEl.textContent));
+      alert("Note saved!");
+    }
+
+    function newNote() {
+      if (confirm("Start a new note? Unsaved changes will be lost.")) {
+        editor.value = "";
+      }
+    }
+
+    function downloadNote() {
+      let filename = sanitizeFilename(filenameEl.textContent);
+      if (!filename.includes('.')) filename += '.txt';
+
+      const blob = new Blob([editor.value], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 0);
+    }
+
+    function openFileDialog() {
+      fileInput.click();
+    }
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        editor.value = e.target.result;
+        filenameEl.textContent = sanitizeFilename(file.name);
+      };
+      reader.readAsText(file);
+
+      // Reset input so same file can be opened again if needed
+      fileInput.value = '';
+    });
+
+    filenameEl.addEventListener('blur', () => {
+      filenameEl.textContent = sanitizeFilename(filenameEl.textContent);
+      localStorage.setItem("filename", filenameEl.textContent);
+    });
+
+    filenameEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        filenameEl.blur();
+      }
+    });
+  </script>
+</body>
+</html>
